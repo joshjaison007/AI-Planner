@@ -26,19 +26,24 @@ def add_event():
         with open("events.json", "r") as f:
             existing = json.load(f)
 
-    response = ollama.generate('llama3.1:8b', 'Extract event details from the following text: ' + text + 
-        ". Format it as JSON with keys: title, date, time, duration in minutes, with default duration of 60 minutes.  Format the date as MM-DD and time as HH:MM.  Today is " 
-        + today.strftime("%m-%d") + ". Here are the existing events:" + json.dumps(existing, indent=2) 
-        + "If any event conflicts with existing ones, adjust the time accordingly.")
-    
-    response2 = ollama.generate('llama3.1:8b', 'Confirm to the user that the last event has been added, and provide the details of the event in a human readable format. If you had to adjust the time, explain the adjustment and why it was necessary. Here are the existing events:' + json.dumps(existing, indent=2) + "Here is the new event:" + response['response'])
-    
+    response = ollama.generate('llama3.1:8b', 
+        'Extract event details from the following text: ' + text + 
+        '. Format the date as MM-DD and time as HH:MM. Today is ' + today.strftime("%m-%d") + 
+        '. Existing events: ' + json.dumps(existing, indent=2) + 
+        '. If any event conflicts, adjust the time accordingly. '
+        'Return a JSON object with two keys: '
+        '"event" (with keys: title, date, time, duration_minutes, default 60 minutes) '
+        'and "message" (a short human readable confirmation of what was added, and if the time was adjusted, explain why). '
+        'Return JSON only, no extra text.')
+
     try:
-        event = json.loads(response['response'])
+        data = json.loads(response['response'])
+        event = data["event"]
+        message = data["message"]
         existing.append(event)
         with open("events.json", "w") as f:
             json.dump(existing, f, indent=2)
-        return jsonify({"status": "ok", "event": event})
+        return jsonify({"status": "ok", "event": event, "message": message})
     except json.JSONDecodeError:
         return jsonify({"status": "error", "message": response['response']})
 
