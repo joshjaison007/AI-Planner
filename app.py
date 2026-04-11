@@ -9,7 +9,7 @@ today = date.today()
 
 @app.route("/")
 def index():
-    return render_template("index2.html")
+    return render_template("index.html")  
 
 @app.route("/events", methods=["GET"])
 def get_events():
@@ -32,7 +32,7 @@ def add_event():
         '. Existing events: ' + json.dumps(existing, indent=2) + 
         '. If any event conflicts, adjust the time accordingly. '
         'Return a JSON object with two keys: '
-        '"event" (with keys: title, date, time, duration_minutes, default 60 minutes) '
+        '"event" (with keys: title, date: default today, time, duration_minutes: default 60 minutes) '
         'and "message" (a short human readable confirmation of what was added, and if the time was adjusted, explain why). '
         'Return JSON only, no extra text.')
 
