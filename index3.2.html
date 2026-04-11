@@ -395,22 +395,38 @@
         }
     }
 
-    function handleAI() {
-        const input = document.getElementById('aiInput');
-        const history = document.getElementById('chatHistory');
-        if(!input.value) return;
-        const val = input.value.toLowerCase();
-        history.innerHTML += `<div class="msg user">${input.value}</div>`;
-        input.value = '';
+   async function handleAI() {
+    const input = document.getElementById('aiInput');
+    const history = document.getElementById('chatHistory');
+    if (!input.value) return;
 
-        setTimeout(() => {
-            let reply = "Processing...";
-            if(val.includes('sync')) { syncWithMCP(); reply = "Syncing Google Calendar..."; }
-            if(val.includes('light')) { toggleLightMode(); reply = "Mode updated."; }
-            history.innerHTML += `<div class="msg ai">${reply}</div>`;
-            history.scrollTop = history.scrollHeight;
-        }, 500);
-    }
+    const userMsg = document.createElement('div');
+    userMsg.className = 'msg user';
+    userMsg.innerText = input.value;
+    history.appendChild(userMsg);
+
+    const query = input.value;
+    input.value = '';
+    history.scrollTop = history.scrollHeight;
+
+    const res = await fetch('/add-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: query })
+    });
+
+    const data = await res.json();
+
+    // display response2 as AI message
+    const aiMsg = document.createElement('div');
+    aiMsg.className = 'msg ai';
+    aiMsg.innerText = data.message || "Event added!";  // ← shows response2
+    history.appendChild(aiMsg);
+    history.scrollTop = history.scrollHeight;
+
+    // add to calendar
+    if (data.event) addEventToCalendar(data.event);
+}
 
     init();
 </script>
