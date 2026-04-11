@@ -1,60 +1,43 @@
-import sys
 import json
 import os
 import ollama
-import pyscript
+from flask import Flask, render_template, request, jsonify
+from datetime import date, datetime
 
-from PyQt5.QtWidgets import QApplication, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QPushButton, QScrollArea, QVBoxLayout, QWidget, QCalendarWidget
-from datetime import date, datetime, timedelta
+app = Flask(__name__)
+today = date.today()
 
-today = date.today() #date
-now = datetime.now() #time
+@app.route("/")
+def index():
+    return render_template("index2.html")
 
-class MainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        self.days = {
-            today.strftime("%m-%d"):                    today.strftime("%m-%d"),
-            (today + timedelta(days=1)).strftime("%m-%d"): (today + timedelta(days=1)).strftime("%m-%d"),
-            (today + timedelta(days=2)).strftime("%m-%d"): (today + timedelta(days=2)).strftime("%m-%d")
-        } 
+@app.route("/events", methods=["GET"])
+def get_events():
+    if os.path.exists("events.json") and os.path.getsize("events.json") > 0:
+        with open("events.json", "r") as f:
+            return jsonify(json.load(f))
+    return jsonify([])
 
-    def on_button_click(self):
-        text = self.input.text() 
-        response = ollama.generate('llama3.1:8b', 'Extract event details from the following text: ' + text + 
-        ". Format it as JSON with keys: title, date, time, duration in minutes.  Format the date as MM-DD and time as HH:MM.  Today is " + today.strftime("%m-%d") + ". Here are the existing events:" 
-        + json.dumps(self.load_events(), indent=2) + "If any event conflicts with existing ones, adjust the time accordingly and let the user know.")
-        self.save_event(response['response'])
-        print(response['response'])
+@app.route("/add-event", methods=["POST"])
+def add_event():
+    text = request.json["text"]
+    existing = []
+    if os.path.exists("events.json") and os.path.getsize("events.json") > 0:
+        with open("events.json", "r") as f:
+            existing = json.load(f)
 
-    
-    def save_event(self, response):
-        # load existing events
-        if os.path.exists("events.json") and os.path.getsize("events.json") > 0:
-            with open("events.json", "r") as f:
-                events = json.load(f)
-        else:
-            events = []
-
-        # parse and add new event
-        try:
-            event = json.loads(response)
-            events.append(event)
-            with open("events.json", "w") as f:
-                json.dump(events, f, indent=2)
-            print("Event saved!")
-        except json.JSONDecodeError:
-            print("Couldn't parse response as JSON:", response)
-
-    def load_events(self):
-        if os.path.exists("events.json") and os.path.getsize("events.json") > 0:
-            with open("events.json", "r") as f:
-                return json.load(f)
-        return []
-    
+    response = ollama.generate('llama3.1:8b', 'Extract event details from the following text: ' + text + 
+        ". Format it as JSON with keys: title, date, time, duration in minutes.  Format the date as MM-DD and time as HH:MM.  Today is " 
+        + today.strftime("%m-%d") + ". Here are the existing events:" + json.dumps(existing, indent=2) 
+        + "If any event conflicts with existing ones, adjust the time accordingly and let the user know.")
+    try:
+        event = json.loads(response['response'])
+        existing.append(event)
+        with open("events.json", "w") as f:
+            json.dump(existing, f, indent=2)
+        return jsonify({"status": "ok", "event": event})
+    except json.JSONDecodeError:
+        return jsonify({"status": "error", "message": response['response']})
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec_())
+    app.run(debug=True)
