@@ -33,7 +33,7 @@ def add_event():
         '. If any event conflicts, adjust the time accordingly. '
         'Return a JSON object with two keys: '
         '"event" (with keys: title, date: default today, time, duration_minutes: default 60 minutes) '
-        'and "message" (a short human readable confirmation of what was added, and if the time was adjusted, explain why). (If the time is the same as another event, but the date is different, that is not a conflict).'
+        'and "message" (a short human readable confirmation of what was added, and if the time was adjusted, explain why). (If the time is the same as another event, but the date is different, NOT a conflict).'
         'Return JSON only, no extra text.')
 
     try:
