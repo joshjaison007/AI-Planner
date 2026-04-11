@@ -341,13 +341,21 @@
     function getDaysInMonth(month, year) { return new Date(year, month + 1, 0).getDate(); }
     function getFirstDayOfMonth(month, year) { return new Date(year, month, 1).getDay(); }
 
+    let lastEventString = "";
     async function syncWithMCP() {
         try {
             const response = await fetch('http://localhost:8000/api/events');
-            googleEvents = await response.json();
+            const dataText = await response.text();
+            
+            // Only re-render if the events actually changed to prevent flickering
+            if (dataText === lastEventString && googleEvents.length > 0) return;
+            lastEventString = dataText;
+            
+            googleEvents = JSON.parse(dataText);
             renderYear();
             if(currentLevel === 'month') renderMonthGrid(currentViewMonth);
             if(currentLevel === 'day') renderDayEvents();
+            updateAgenda();
         } catch(e) { console.warn("Failed to fetch events from server."); }
     }
 
@@ -356,6 +364,8 @@
         renderDayGrid();
         updateHeader();
         syncWithMCP();
+        // Check for new events written to the JSON file every 3 seconds
+        setInterval(syncWithMCP, 3000);
     }
 
     function renderYear() {
@@ -475,6 +485,20 @@
                 }
             }
         });
+    }
+
+    function updateAgenda() {
+        const taskList = document.getElementById('taskList');
+        if (!taskList || !googleEvents) return;
+        taskList.innerHTML = '';
+        googleEvents.forEach(e => {
+            const d = new Date(e.start || e.start_time);
+            const dateStr = d.toLocaleDateString([], {month: 'short', day: 'numeric'});
+            taskList.innerHTML += `<div style="display: flex; gap: 10px; align-items: center;"><div style="width:8px; height:8px; background:var(--accent); border-radius:50%; flex-shrink: 0;"></div> <div>${e.title} <span style="color: var(--text-dim); font-size: 11px;">(${dateStr})</span></div></div>`;
+        });
+        if(googleEvents.length === 0) {
+            taskList.innerHTML = `<div style="color: var(--text-dim); font-size: 13px;">No events scheduled</div>`;
+        }
     }
 
     async function handleAI() {
