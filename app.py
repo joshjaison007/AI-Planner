@@ -9,7 +9,7 @@ today = date.today()
 
 @app.route("/")
 def index():
-    return render_template("index.html")  
+    return render_template("index3_5.html")  
 
 @app.route("/events", methods=["GET"])
 def get_events():
