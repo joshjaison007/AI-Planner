@@ -462,7 +462,8 @@
         history.scrollTop = history.scrollHeight;
 
         try {
-            const res = await fetch('/add-event', {
+            // CHANGE THIS LINE in index.html inside handleAI():
+            const res = await fetch('http://localhost:8000/api/add-event', { // Added http and /api/
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text: query })
@@ -486,8 +487,9 @@
 
     init();
 </script>
-<button id="addEventFab" onclick="openAddEventPopup()" style="position: fixed; bottom: 30px; right: 380px; width: 60px; height: 60px; border-radius: 50%; background: var(--primary); border: none; color: white; font-size: 30px; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 99; display: flex; align-items: center; justify-content: center; transition: transform 0.2s;">+</button>
+<button id="addEventFab" onclick="togglePopup(true)" style="position: fixed; bottom: 30px; right: 380px; width: 60px; height: 60px; border-radius: 50%; background: var(--primary); border: none; color: white; font-size: 30px; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.3); z-index: 99; display: flex; align-items: center; justify-content: center; transition: transform 0.2s;">+</button>
 
 <script src="add-event.js"></script>
+
 </body>
 </html>
