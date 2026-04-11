@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Liquid Planner - Pro Edition</title>
+    <style>
+        :root {
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-thick: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.12);
+            --primary: #8ab4f8;
+            --accent: #c58af9;
+            --text: #e8eaed;
+            --text-dim: #9aa0a6;
+            --zoom-speed: 0.6s;
+            --bg: #0a0a0c;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Google Sans', 'Inter', sans-serif; }
+        
+        body { 
+            background: radial-gradient(circle at top left, #1a1b2e 0%, #050505 100%); 
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* --- Sidebar & Glass Panels --- */
+        aside {
+            width: 320px;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(40px);
+            border-right: 1px solid var(--glass-border);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            z-index: 50;
+        }
+
+        .panel-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 18px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        /* --- Main Viewport (The Stage) --- */
+        main {
+            flex: 1;
+            position: relative;
+            perspective: 1200px;
+            background: rgba(255,255,255,0.01);
+        }
+
+        header {
+            height: 70px;
+            display: flex;
+            align-items: center;
+            padding: 0 40px;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .view-layer {
+            position: absolute;
+            top: 70px; left: 0; right: 0; bottom: 0;
+            transition: transform var(--zoom-speed) cubic-bezier(0.4, 0, 0.2, 1), 
+                        opacity var(--zoom-speed) ease,
+                        filter var(--zoom-speed) ease;
+            transform-origin: center center;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        /* --- Zoom States --- */
+        .hidden { pointer-events: none; opacity: 0; filter: blur(20px); }
+        .zoom-out { transform: scale(0.7) translateZ(-200px); opacity: 0; filter: blur(10px); }
+        .zoom-in { transform: scale(1.4) translateZ(200px); opacity: 0; filter: blur(10px); }
+
+        /* --- Year View Grid --- */
+        .year-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            height: fit-content;
+        }
+        .month-preview {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .month-preview:hover { background: var(--glass-thick); border-color: var(--primary); transform: translateY(-5px); }
+        .mini-grid-dots { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-top: 8px; pointer-events: none; }
+        .dot { width: 4px; height: 4px; background: var(--text-dim); border-radius: 50%; justify-self: center; }
+
+        /* --- Month Grid --- */
+        .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; height: 100%; }
+        .month-day {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .month-day:hover { background: var(--glass-thick); border-color: var(--primary); box-shadow: 0 0 20px rgba(138, 180, 248, 0.2); }
+
+        /* --- Day View Grid --- */
+        .time-row {
+            display: flex;
+            height: 100px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            align-items: center;
+        }
+        .time-label { width: 80px; font-size: 13px; color: var(--primary); font-weight: 500; }
+        .time-content { flex: 1; height: 100%; }
+
+        /* --- AI Conversation Drawer --- */
+        .ai-chat-drawer {
+            width: 350px;
+            background: rgba(15, 15, 18, 0.9);
+            border-left: 1px solid var(--glass-border);
+            backdrop-filter: blur(50px);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+        }
+        .chat-history { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .msg { padding: 12px 16px; border-radius: 15px; font-size: 14px; line-height: 1.4; max-width: 85%; }
+        .msg.ai { background: var(--glass-thick); color: var(--text); align-self: flex-start; border-bottom-left-radius: 2px; }
+        .msg.user { background: var(--primary); color: #000; align-self: flex-end; border-bottom-right-radius: 2px; font-weight: 500; }
+
+        .chat-input-area { padding: 20px; border-top: 1px solid var(--glass-border); }
+        .chat-input-wrapper {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 25px;
+            padding: 10px 15px;
+            display: flex;
+            gap: 10px;
+        }
+        #aiInput { flex: 1; background: none; border: none; color: white; outline: none; font-size: 14px; }
+        .send-btn { background: var(--primary); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+        .btn-pill {
+            background: var(--glass); border: 1px solid var(--glass-border); color: white;
+            padding: 8px 18px; border-radius: 20px; cursor: pointer; font-size: 13px;
+        }
+        .btn-pill:hover { background: var(--glass-thick); }
+    </style>
+</head>
+<body>
+
+    <aside>
+        <div style="font-size: 24px; font-weight: bold; letter-spacing: -1px; color: var(--primary);">✦ Liquid.ai</div>
+        
+        <div class="panel-card">
+            <div id="miniTitle" style="font-size: 13px; color: var(--text-dim); margin-bottom: 12px; font-weight: bold; text-transform: uppercase;">Agenda</div>
+            <div id="taskList" style="font-size: 14px; display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; gap: 10px; align-items: center;"><div style="width:8px; height:8px; background:var(--accent); border-radius:50%;"></div> Meet with Devs</div>
+                <div style="display: flex; gap: 10px; align-items: center;"><div style="width:8px; height:8px; background:var(--primary); border-radius:50%;"></div> Design System Polish</div>
+            </div>
+        </div>
+
+        <div class="panel-card" style="flex: 1; border-style: dashed; opacity: 0.6; display: flex; align-items: center; justify-content: center; text-align: center;">
+            <span style="font-size: 12px; color: var(--text-dim);">Drop files here to sync with AI Planner</span>
+        </div>
+    </aside>
+
+    <main>
+        <header>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <button id="backBtn" class="btn-pill" onclick="handleBack()">← Back</button>
+                <h2 id="viewTitle" style="font-weight: 500;">2026</h2>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div style="width: 10px; height: 10px; background: #ff5f56; border-radius: 50%;"></div>
+                <div style="width: 10px; height: 10px; background: #ffbd2e; border-radius: 50%;"></div>
+                <div style="width: 10px; height: 10px; background: #27c93f; border-radius: 50%;"></div>
+            </div>
+        </header>
+
+        <div id="yearLayer" class="view-layer">
+            <div class="year-grid" id="yearGrid"></div>
+        </div>
+
+        <div id="monthLayer" class="view-layer zoom-in hidden">
+            <div class="month-grid" id="monthGrid"></div>
+        </div>
+
+        <div id="dayLayer" class="view-layer zoom-in hidden">
+            <div class="day-view" id="dayContent"></div>
+        </div>
+    </main>
+
+    <div class="ai-chat-drawer">
+        <div style="padding: 20px; border-bottom: 1px solid var(--glass-border); font-weight: bold; font-size: 15px;">AI Assistant</div>
+        <div class="chat-history" id="chatHistory">
+            <div class="msg ai">Hello! I'm your Liquid AI. I can manage your 2026 schedule. What's on your mind?</div>
+        </div>
+        <div class="chat-input-area">
+            <div class="chat-input-wrapper">
+                <input type="text" id="aiInput" placeholder="Message AI...">
+                <button class="send-btn" onclick="handleAI()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let currentLevel = 'year'; // year, month, day
+    const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    function init() {
+        renderYear();
+        renderDayGrid();
+        updateHeader();
+    }
+
+    function renderYear() {
+        const grid = document.getElementById('yearGrid');
+        grid.innerHTML = '';
+        months.forEach((m, i) => {
+            const card = document.createElement('div');
+            card.className = 'month-preview';
+            card.innerHTML = `
+                <div style="font-weight:bold; font-size:14px; margin-bottom:10px;">${m}</div>
+                <div class="mini-grid-dots">
+                    ${Array(28).fill('<div class="dot"></div>').join('')}
+                </div>
+            `;
+            card.onclick = () => zoomIntoMonth(m);
+            grid.appendChild(card);
+        });
+    }
+
+    function zoomIntoMonth(monthName) {
+        currentLevel = 'month';
+        updateHeader(monthName);
+        
+        const yearLayer = document.getElementById('yearLayer');
+        const monthLayer = document.getElementById('monthLayer');
+        
+        renderMonthGrid(monthName);
+        
+        yearLayer.classList.add('zoom-out');
+        monthLayer.classList.remove('hidden', 'zoom-in');
+    }
+
+    function renderMonthGrid(name) {
+        const grid = document.getElementById('monthGrid');
+        grid.innerHTML = '';
+        for(let i=1; i<=30; i++) {
+            const day = document.createElement('div');
+            day.className = 'month-day';
+            day.innerHTML = `<div style="font-weight:bold; color:var(--primary)">${i}</div>`;
+            day.onclick = (e) => { e.stopPropagation(); zoomIntoDay(i, name); };
+            grid.appendChild(day);
+        }
+    }
+
+    function zoomIntoDay(dayNum, monthName) {
+        currentLevel = 'day';
+        updateHeader(`${monthName} ${dayNum}`);
+        
+        const monthLayer = document.getElementById('monthLayer');
+        const dayLayer = document.getElementById('dayLayer');
+        
+        monthLayer.classList.add('zoom-out');
+        dayLayer.classList.remove('hidden', 'zoom-in');
+    }
+
+    function handleBack() {
+        if(currentLevel === 'day') {
+            currentLevel = 'month';
+            updateHeader(document.getElementById('viewTitle').innerText.split(' ')[0]);
+            document.getElementById('dayLayer').classList.add('zoom-in');
+            document.getElementById('monthLayer').classList.remove('zoom-out');
+            setTimeout(() => document.getElementById('dayLayer').classList.add('hidden'), 600);
+        } else if(currentLevel === 'month') {
+            currentLevel = 'year';
+            updateHeader('2026');
+            document.getElementById('monthLayer').classList.add('zoom-in');
+            document.getElementById('yearLayer').classList.remove('zoom-out');
+            setTimeout(() => document.getElementById('monthLayer').classList.add('hidden'), 600);
+        }
+    }
+
+    function updateHeader(text) {
+        document.getElementById('viewTitle').innerText = text || '2026';
+        document.getElementById('backBtn').style.opacity = currentLevel === 'year' ? '0' : '1';
+        document.getElementById('backBtn').style.pointerEvents = currentLevel === 'year' ? 'none' : 'all';
+    }
+
+    function renderDayGrid() {
+        const content = document.getElementById('dayContent');
+        for(let i=8; i<20; i++) {
+            content.innerHTML += `<div class="time-row"><div class="time-label">${i}:00</div><div class="time-content"></div></div>`;
+        }
+    }
+
+    async function handleAI() {
+        const input = document.getElementById('aiInput');
+        const history = document.getElementById('chatHistory');
+        if(!input.value) return;
+
+        const userMsg = document.createElement('div');
+        userMsg.className = 'msg user';
+        userMsg.innerText = input.value;
+        history.appendChild(userMsg);
+        
+        const query = input.value.toLowerCase();
+        input.value = '';
+        history.scrollTop = history.scrollHeight;
+
+        // Simulated Response
+        setTimeout(() => {
+            const aiMsg = document.createElement('div');
+            aiMsg.className = 'msg ai';
+            aiMsg.innerText = query.includes('schedule') ? "I've added that to your April 12th agenda." : "Got it. I'll remember that for you.";
+            history.appendChild(aiMsg);
+            history.scrollTop = history.scrollHeight;
+        }, 600);
+    }
+
+    init();
+</script>
+</body>
+</html>
