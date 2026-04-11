@@ -27,9 +27,12 @@ def add_event():
             existing = json.load(f)
 
     response = ollama.generate('llama3.1:8b', 'Extract event details from the following text: ' + text + 
-        ". Format it as JSON with keys: title, date, time, duration in minutes.  Format the date as MM-DD and time as HH:MM.  Today is " 
+        ". Format it as JSON with keys: title, date, time, duration in minutes, with default duration of 60 minutes.  Format the date as MM-DD and time as HH:MM.  Today is " 
         + today.strftime("%m-%d") + ". Here are the existing events:" + json.dumps(existing, indent=2) 
-        + "If any event conflicts with existing ones, adjust the time accordingly and let the user know.")
+        + "If any event conflicts with existing ones, adjust the time accordingly.")
+    
+    response2 = ollama.generate('llama3.1:8b', 'Confirm to the user that the last event has been added, and provide the details of the event in a human readable format. If you had to adjust the time, explain the adjustment and why it was necessary. Here are the existing events:' + json.dumps(existing, indent=2) + "Here is the new event:" + response['response'])
+    
     try:
         event = json.loads(response['response'])
         existing.append(event)
