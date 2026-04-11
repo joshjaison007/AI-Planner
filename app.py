@@ -2,7 +2,8 @@ import sys
 import json
 import os
 import ollama
-from PyQt5.QtWidgets import QApplication, QLineEdit, QMainWindow, QPushButton, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QApplication, QLineEdit, QMainWindow, QPushButton, QVBoxLayout, QWidget, QCalendarWidget
+from datetime import date
 
 
 class MainWindow(QMainWindow):
@@ -26,7 +27,7 @@ class MainWindow(QMainWindow):
     def on_button_click(self):
         text = self.input.text() 
         response = ollama.generate('llama3.1:8b', 'Extract event details from the following text: ' + text + 
-        ". Format it as JSON with keys: title, date, time, location.")
+        ". Format it as JSON with keys: title, date, time, location.  Format the date as MM-DD and time as HH:MM.  Today is " + date.today().strftime("%m-%d") + ".")
         print(response['response'])
 
 if __name__ == "__main__":
