@@ -468,12 +468,18 @@
                 body: JSON.stringify({ text: query })
             });
 
-            const data = await res.json();
+            // check if flask returned an error
+            console.log("Status:", res.status);
+            const raw = await res.text();  // read as text first
+            console.log("Raw response:", raw);  // see exactly what flask sent back
+
+            const data = JSON.parse(raw);  // then parse it
             history.lastElementChild.innerText = data.message || "Event added!";
             if (data.event) addEventToCalendar(data.event);
 
         } catch (err) {
-            history.lastElementChild.innerText = "Something went wrong. Please try again.";
+            console.log("Error:", err);  // see the actual error
+            history.lastElementChild.innerText = "Something went wrong: " + err.message;
         }
 
         history.scrollTop = history.scrollHeight;
