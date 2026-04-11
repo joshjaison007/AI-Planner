@@ -475,7 +475,6 @@
 
             const data = JSON.parse(raw);  // then parse it
             history.lastElementChild.innerText = data.message || "Event added!";
-            if (data.event) addEventToCalendar(data.event);
 
         } catch (err) {
             console.log("Error:", err);  // see the actual error
