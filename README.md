@@ -1,4 +1,4 @@
-# AI-Planner by Liquid AI 🚀
+# Liquid AI (AI-Planner)
 
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![AI-Gemini](https://img.shields.io/badge/AI-Gemini%20Pro-orange.svg)](https://deepmind.google/technologies/gemini/)
