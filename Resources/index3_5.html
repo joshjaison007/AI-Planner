@@ -311,6 +311,14 @@
             <span id="collapseIcon">›</span>
         </div>
         <div class="chat-container-inner">
+            <div id="aiKeyPrompt" style="display:none; position: absolute; top:0; left:0; width:100%; height:100%; background: var(--bg-panel); backdrop-filter: blur(20px); z-index: 105; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; gap: 20px;">
+                <div style="font-size: 18px; font-weight: bold;">AI Setup Required</div>
+                <p style="font-size: 14px; color: var(--text-dim);">To start chatting, please configure your AI API key in Settings.</p>
+                <div style="font-size: 10px; color: var(--text-dim); margin-top: -10px;">
+                    Don't know how to find your API? <a id="aiChatKeyLink" href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: bold;">HOW?</a>
+                </div>
+                <button class="btn-pill" style="background: var(--primary); color: white; width: 100%; padding: 12px; border: none;" onclick="window.toggleSettings()">Open Settings</button>
+            </div>
             <div style="padding: 20px; border-bottom: 1px solid var(--glass-border); font-weight: bold;">AI Assistant</div>
             <div class="chat-history" id="chatHistory">
                 <div class="msg ai">Hey! How can I help you today?.</div>
@@ -361,15 +369,17 @@
             <div class="setting-row" style="flex-direction: column; align-items: flex-start; gap: 10px;">
                 <label style="font-size: 13px;">AI Provider</label>
                 <select id="apiProvider" class="settings-input" style="padding: 10px 15px; border-radius: 12px; background: var(--glass-thick); border: 1px solid var(--glass-border); color: var(--text); width: 100%; outline: none;" onchange="window.handleProviderChange()">
-                    <option value="gemini_default" style="color: black;">Free Gemini (Default)</option>
-                    <option value="gemini" style="color: black;">Custom Gemini Key</option>
+                    <option value="gemini" style="color: black;">Gemini (Google)</option>
                     <option value="openai" style="color: black;">OpenAI (ChatGPT)</option>
                     <option value="groq" style="color: black;">Groq</option>
                 </select>
                 
-                <div id="apiSettingsFields" style="display: none; width: 100%; flex-direction: column; gap: 10px; margin-top: 5px;">
+                <div id="apiSettingsFields" style="display: flex; width: 100%; flex-direction: column; gap: 10px; margin-top: 5px;">
                     <label style="font-size: 13px;">API Key</label>
                     <input type="password" id="apiKey" class="settings-input" placeholder="Enter API Key">
+                    <div id="apiKeyHelp" style="font-size: 10px; color: var(--text-dim); margin-top: -5px;">
+                        Don't know how to find your API? <a id="apiKeyLink" href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--primary); text-decoration: none; font-weight: bold;">HOW?</a>
+                    </div>
                     
                     <div id="modelNameContainer" style="display: none; flex-direction: column; gap: 10px;">
                         <label style="font-size: 13px;">Model Name</label>

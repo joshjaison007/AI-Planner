@@ -56,6 +56,9 @@ window.loadEmailSettings = async function() {
             }
             if(data.api_key) {
                 document.getElementById('apiKey').value = data.api_key;
+                document.getElementById('aiKeyPrompt').style.display = 'none';
+            } else {
+                document.getElementById('aiKeyPrompt').style.display = 'flex';
             }
             if(data.api_model) {
                 document.getElementById('apiModel').value = data.api_model;
@@ -63,7 +66,7 @@ window.loadEmailSettings = async function() {
             window.handleProviderChange();
         }
     } catch(e) {
-        console.error("Could not load push settings");
+        console.error("Could not load settings");
     }
 };
 
@@ -71,17 +74,24 @@ window.handleProviderChange = function() {
     const provider = document.getElementById('apiProvider').value;
     const settingsFields = document.getElementById('apiSettingsFields');
     const modelContainer = document.getElementById('modelNameContainer');
+    const helpLink = document.getElementById('apiKeyLink');
+    const chatHelpLink = document.getElementById('aiChatKeyLink');
     
-    if (provider === 'gemini_default') {
-        settingsFields.style.display = 'none';
+    settingsFields.style.display = 'flex';
+    
+    let url = "https://aistudio.google.com/app/apikey";
+    if (provider === 'gemini') {
+        modelContainer.style.display = 'none';
     } else {
-        settingsFields.style.display = 'flex';
-        if (provider === 'gemini') {
-            modelContainer.style.display = 'none';
-        } else {
-            modelContainer.style.display = 'flex';
+        modelContainer.style.display = 'flex';
+        if (provider === 'openai') {
+            url = "https://platform.openai.com/api-keys";
+        } else if (provider === 'groq') {
+            url = "https://console.groq.com/keys";
         }
     }
+    if (helpLink) helpLink.href = url;
+    if (chatHelpLink) chatHelpLink.href = url;
 };
 
 window.saveApiSettings = async function() {
@@ -101,6 +111,11 @@ window.saveApiSettings = async function() {
         });
         if(res.ok) {
             alert('AI Configuration saved successfully!');
+            if(key) {
+                document.getElementById('aiKeyPrompt').style.display = 'none';
+            } else {
+                document.getElementById('aiKeyPrompt').style.display = 'flex';
+            }
         } else {
             alert('Failed to save AI configuration.');
         }

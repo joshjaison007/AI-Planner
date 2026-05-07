@@ -206,20 +206,22 @@ def ai_command():
             with open(CONFIG_FILE, "r") as f:
                 config = json.load(f)
                 
-        provider = config.get("api_provider", "gemini_default")
+        provider = config.get("api_provider", "gemini") # Default to 'gemini' since 'gemini_default' is being removed
         
-        if provider == "gemini_default" or provider == "gemini":
+        if provider == "gemini":
             import google.generativeai as genai
-            api_key = config.get("api_key") if provider == "gemini" else "AIzaSyAQHeNU-u-Jvu6ix5nqGQInc4cGJdpL93g"
-            if not api_key: raise Exception("API Key is required for Custom Gemini")
+            api_key = config.get("api_key")
+            if not api_key: 
+                return jsonify({"status": "error", "message": "API Key Missing: Please go to Settings and add your Gemini API Key."})
             genai.configure(api_key=api_key)
-            local_model = genai.GenerativeModel('gemini-2.5-flash', generation_config={"response_mime_type": "application/json"})
+            local_model = genai.GenerativeModel('gemini-1.5-flash', generation_config={"response_mime_type": "application/json"})
             response = local_model.generate_content(system_prompt)
             data = json.loads(response.text)
             
         elif provider in ["openai", "groq"]:
             api_key = config.get("api_key")
-            if not api_key: raise Exception("API Key is required")
+            if not api_key: 
+                return jsonify({"status": "error", "message": f"API Key Missing: Please go to Settings and add your {provider.upper()} API Key."})
             
             base_url = "https://api.openai.com/v1/chat/completions"
             if provider == "groq": base_url = "https://api.groq.com/openai/v1/chat/completions"
